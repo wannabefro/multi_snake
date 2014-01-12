@@ -53,6 +53,8 @@ snakePart.position = snakeParts;
 snakeHead = snakePart;
 snakeTail = snakePart;
 
+var snake = {snakeTail: snakeTail, snakePart: snakePart, snakeHead: snakeHead, snakeParts: snakeParts}
+
 var randomFoodCell = randomCell(grid.length - 1);
 var food = new Kinetic.Circle({
   id: 'food',
@@ -74,6 +76,9 @@ var where = Still;
 var gameInterval = self.setInterval(function(){gameLoop()},70);
 $( document ).ready(function() {
   mySnake.set({color: color, score: score});
+  changeSnakes();
+  removeSnakes();
+  addSnakes();
   $(document).keydown(function(e) {
 
     switch(e.keyCode) {
@@ -95,7 +100,7 @@ $( document ).ready(function() {
       break;
 
     }
-    mySnake.set({snakeParts: snakeParts, snakeTail: {x: snakeTail.getX(), y: snakeTail.getY()} , snakeHead: {x: snakeHead.getX(), y: snakeHead.getY()}});
+    mySnake.update({snake: JSON.stringify(snake), where: where});
   });
 
 });
@@ -297,7 +302,7 @@ function snakeEatsFood(direction)
   }
   if(eats == true) {
     score++; $('#score').html('<p>' + score + '</p>');
-    mySnake.set({score: score});
+    mySnake.update({score: score});
   }
   return eats ;
 }
@@ -358,7 +363,7 @@ function createSnakePart(x,y)
     y: y,
     width: snakeWidth,
     height: snakeHeight,
-    fill: 'black',
+    fill: color,
 
   });
   layer.add(snakePart);
@@ -425,3 +430,32 @@ $(window).unload(function(){
   mySnake.remove();
 });
 
+function changeSnakes(){
+  allSnakes.on('child_changed', function(snake, prevChildName) {
+    if (snake.val().color != color){
+        makeSnake(snake.val());
+    }
+  });
+}
+
+function addSnakes(){
+  allSnakes.on('child_added', function(snake, prevChildName) {
+    if (snake.val().color != color && snake.val().snake != undefined){
+      makeSnake(snake.val());
+    }
+  });
+}
+
+function removeSnakes(){
+  allSnakes.on('child_removed', function(oldSnake){
+    if (oldSnake.val().snake != undefined){
+      JSON.parse(oldSnake.val().snake).snakePart.remove();
+      layer.draw();
+    }
+  });
+}
+
+function makeSnake(snake){
+  var newSnake = JSON.parse(snake.snake)
+  layer.add(Kinetic.Node.create(newSnake.snakePart, 'rectangle'));
+}
